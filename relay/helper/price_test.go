@@ -139,10 +139,12 @@ func TestModelPriceHelperDoesNotReserveQuotaForOmniModeration(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	originalModelRatio := ratio_setting.ModelRatio2JSONString()
 	originalGroupRatio := ratio_setting.GroupRatio2JSONString()
+	originalPreConsumedQuota := common.PreConsumedQuota
 	originalFreeModelPreConsume := operation_setting.GetQuotaSetting().EnableFreeModelPreConsume
 	t.Cleanup(func() {
 		require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(originalModelRatio))
 		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(originalGroupRatio))
+		common.PreConsumedQuota = originalPreConsumedQuota
 		operation_setting.GetQuotaSetting().EnableFreeModelPreConsume = originalFreeModelPreConsume
 	})
 	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"omni-moderation-latest":0}`))
@@ -161,6 +163,12 @@ func TestModelPriceHelperDoesNotReserveQuotaForOmniModeration(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, priceData.ModelRatio)
 	require.Zero(t, priceData.QuotaToPreConsume)
+
+	common.PreConsumedQuota = 500
+	operation_setting.GetQuotaSetting().EnableFreeModelPreConsume = true
+	priceData, err = ModelPriceHelper(ctx, info, 100, &types.TokenCountMeta{})
+	require.NoError(t, err)
+	require.Equal(t, 500, priceData.QuotaToPreConsume)
 }
 
 func TestModelPriceHelperPerCallRejectsUnpricedMJSunoTaskModels(t *testing.T) {
