@@ -3981,6 +3981,7 @@
           },
           "model": {
             "type": "string",
+            "description": "Optional. Defaults to omni-moderation-latest when omitted. Tokens with model limits must explicitly allow this model.",
             "example": "omni-moderation-latest"
           }
         }
